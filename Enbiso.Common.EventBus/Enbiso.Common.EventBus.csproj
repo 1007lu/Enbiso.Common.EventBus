@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Enbiso.Common.EventBus</PackageId>
-    <PackageVersion>1.0.1</PackageVersion>
+    <PackageVersion>1.0.2</PackageVersion>
     <Authors>Team enbiso</Authors>
-    <Description>Abstract event bus library</Description>
+    <Description>Simple Abstract event bus library</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Copyright>Copyright 2017 (c) enbiso. All rights reserved.</Copyright>
     <PackageTags>Enbiso Enbiso.Common EventBus</PackageTags>
@@ -14,8 +14,9 @@
     <Owners>enbiso</Owners>
     <PackageProjectUrl>https://gitlab.com/enbiso/common/Enbiso.Common.EventBus</PackageProjectUrl>
     <PackageReleaseNotes>Initial Release</PackageReleaseNotes>
-    <Summary>Abstract event bus library</Summary>
-    <Title>Abstract EventBus</Title>
+    <Summary>Enbiso - Simple Abstract EventBus Library in .NET Standard</Summary>
+    <Title>Simple Abstract EventBus</Title>
+    <PackageIconUrl>https://image.ibb.co/jkE54b/logo.png</PackageIconUrl>
   </PropertyGroup>
 
 </Project>
