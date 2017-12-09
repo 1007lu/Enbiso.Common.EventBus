@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Enbiso.Common.EventBus</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Team enbiso</Authors>
+    <Description>Abstract EventBus Library</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright 2017 (c) enbiso. All rights reserved.</Copyright>
+    <PackageTags>Enbiso Enbiso.Common EventBus</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+</Project>

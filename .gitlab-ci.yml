@@ -1,0 +1,24 @@
+stages:
+- build-dotnet
+- release-nuget
+
+variables:  
+  NUGET_REGISTRY: https://packages.nuget.org
+
+build-dotnet:
+  image: microsoft/dotnet
+  stage: build-dotnet
+  script:
+  - dotnet restore ./$CI_PROJECT_NAME.sln 
+  - dotnet build ./$CI_PROJECT_NAME.sln -c Release
+  artifacts:    
+    untracked: true
+    expire_in: '10 mins'
+
+release-nuget:
+  image: microsoft/dotnet
+  stage: release-nuget
+  script:
+  - dotnet nuget push ./$CI_PROJECT_NAME/bin/Release/$CI_PROJECT_NAME.*.nupkg -s $NUGET_REGISTRY -k $NUGET_API_KEY 
+  only:
+  - master
