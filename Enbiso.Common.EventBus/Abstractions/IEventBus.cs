@@ -1,9 +1,13 @@
-﻿using Enbiso.Common.EventBus.Events;
+﻿using System;
+using System.Threading.Tasks;
+using Enbiso.Common.EventBus.Events;
 
 namespace Enbiso.Common.EventBus.Abstractions
 {
     public interface IEventBus
     {
+        void Initialize(Action action = null);
+
         void Publish(IntegrationEvent @event);
 
         void Subscribe<T, TH>()
