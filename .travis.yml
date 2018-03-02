@@ -4,4 +4,6 @@ dotnet: 2.1.4
 script:
   - dotnet restore
   - dotnet build -c release -o ../bin
-  - $TRAVIS_BRANCH == "develop" && dotnet nuget push ./bin/*.nupkg -k $NUGET_API_KEY 
+  - if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then
+      dotnet nuget push ./bin/*.nupkg -k $NUGET_API_KEY 
+    fi
