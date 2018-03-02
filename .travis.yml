@@ -5,7 +5,8 @@ script:
   - dotnet restore
   - dotnet build -c release -o ../bin
 after_success:
-  - if [ "$TRAVIS_BRANCH" = "master" ] 
-    then
-      dotnet nuget push ./bin/*.nupkg -s https://packages.nuget.org -k $NUGET_API_KEY
+  - if [ "$TRAVIS_BRANCH" = "master" ]; then
+      dotnet nuget push ./bin/Enbiso.Common.EventBus.RabbitMq.*.nupkg -s https://packages.nuget.org -k $NUGET_API_KEY;
+      dotnet nuget push ./bin/Enbiso.Common.EventBus.ServiceBus.*.nupkg -s https://packages.nuget.org -k $NUGET_API_KEY;
+      dotnet nuget push ./bin/Enbiso.Common.EventBus.*.nupkg -s https://packages.nuget.org -k $NUGET_API_KEY;
     fi
