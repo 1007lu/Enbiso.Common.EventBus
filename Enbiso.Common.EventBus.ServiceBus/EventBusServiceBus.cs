@@ -38,6 +38,11 @@ namespace Enbiso.Common.EventBus.ServiceBus
             _autofac = autofac;
 
             RemoveDefaultRule();
+        }
+
+        public void Initialize(Action action = null)
+        {
+            action?.Invoke();
             RegisterSubscriptionClientMessageHandler();
         }
 
