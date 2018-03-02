@@ -3,4 +3,5 @@ mono: none
 dotnet: 2.1.4
 script:
   - dotnet restore
-  - dotnet build 
+  - dotnet build -c release -o ../bin
+  - $TRAVIS_BRANCH == "develop" && dotnet nuget push ./bin/*.nupkg -k $NUGET_API_KEY 
