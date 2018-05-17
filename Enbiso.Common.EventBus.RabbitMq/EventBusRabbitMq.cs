@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Autofac;
 using Enbiso.Common.EventBus.Abstractions;
 using Enbiso.Common.EventBus.Events;
+using Enbiso.Common.EventBus.RabbitMq.Config;
+using Enbiso.Common.EventBus.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -15,7 +17,11 @@ using RabbitMQ.Client.Exceptions;
 
 namespace Enbiso.Common.EventBus.RabbitMq
 {
-    public class EventBusRabbitMq : IEventBus, IDisposable
+    /// <inheritdoc />
+    /// <summary>
+    /// Rabbit implementation of event bus
+    /// </summary>
+    public class EventBusRabbitMq : IEventBus
     {
         private readonly string _brokerName;
         private readonly string _autofacScopeName;
@@ -28,22 +34,30 @@ namespace Enbiso.Common.EventBus.RabbitMq
         private IModel _consumerChannel;
         private readonly string _queueName;
 
+        /// <summary>
+        /// Constrsuctor
+        /// </summary>
+        /// <param name="persistentConnection"></param>
+        /// <param name="logger"></param>
+        /// <param name="autofac"></param>
+        /// <param name="subscriptionManager"></param>
+        /// <param name="option"></param>
         public EventBusRabbitMq(IRabbitMqPersistentConnection persistentConnection, ILogger<EventBusRabbitMq> logger,
-            ILifetimeScope autofac, IEventBusSubscriptionsManager subscriptionManager, string queueName = null, int retryCount = 5, 
-            string brokerName = "enbiso_broker", string autofacScopeName = "enbiso_scope")
+            ILifetimeScope autofac, IEventBusSubscriptionsManager subscriptionManager, RabbitMqOption option)
         {
-            _brokerName = brokerName;
-            _autofacScopeName = autofacScopeName;
+            _queueName = option.Client ?? throw new ArgumentNullException(nameof(option.Client));
+            _brokerName = option.Exchange ?? throw new ArgumentNullException(nameof(option.Exchange));
+            _autofacScopeName = option.Scope ?? $"scope_{option.Exchange}_{option.Client}";
             _persistentConnection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _subscriptionsManager = subscriptionManager ?? new InMemoryEventBusSubscriptionsManager();
-            _queueName = queueName;
             _autofac = autofac;
-            _retryCount = retryCount;
             _subscriptionsManager.OnEventRemoved += SubscriptionManager_OnEventRemoved;
             _consumerChannel = CreateConsumerChannel();
+            _retryCount = option.PublishRetryCount;
         }
 
+        /// <inheritdoc />
         public void Initialize(Action action = null)
         {
             action?.Invoke();
@@ -57,6 +71,93 @@ namespace Enbiso.Common.EventBus.RabbitMq
             _consumerChannel.BasicConsume(queue: _queueName, autoAck: false, consumer: consumer);
         }
 
+        /// <inheritdoc />
+        public void Publish(IIntegrationEvent @event)
+        {
+            if (!_persistentConnection.IsConnected)
+            {
+                _persistentConnection.TryConnect();
+            }
+
+            var policy = Policy.Handle<BrokerUnreachableException>()
+                .Or<SocketException>()
+                .WaitAndRetry(_retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (ex, time) =>
+                {
+                    _logger.LogWarning(ex.ToString());
+                });
+
+            using (var channel = _persistentConnection.CreateModel())
+            {
+                var eventName = @event.GetType().Name;
+                channel.ExchangeDeclare(exchange: _brokerName, type: "direct");
+
+                var message = JsonConvert.SerializeObject(@event);
+                var body = Encoding.UTF8.GetBytes(message);
+                policy.Execute(() =>
+                {
+                    channel.BasicPublish(exchange: _brokerName, routingKey: eventName, basicProperties: null, body: body);
+                });
+            }
+        }
+
+        /// <inheritdoc />
+        public void Subscribe<TEvent, TEventHandler>() 
+            where TEvent : IIntegrationEvent 
+            where TEventHandler : IIntegrationEventHandler<TEvent>
+        {
+            var eventName = _subscriptionsManager.GetEventKey<TEvent>();
+            DoInternalSubscription(eventName);
+            _subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
+        }
+
+        /// <inheritdoc />
+        public void SubscribeDynamic<TEventHandler>(string eventName) 
+            where TEventHandler : IDynamicIntegrationEventHandler
+        {
+            DoInternalSubscription(eventName);
+            _subscriptionsManager.AddDynamicSubscription<TEventHandler>(eventName);
+        }
+
+        /// <inheritdoc />
+        public void UnsubscribeDynamic<TEventHandler>(string eventName) 
+            where TEventHandler : IDynamicIntegrationEventHandler
+        {
+            _subscriptionsManager.RemoveDynamicSubscription<TEventHandler>(eventName);
+        }
+
+        /// <inheritdoc />
+        public void Unsubscribe<TEvent, TEventHandler>() 
+            where TEvent : IIntegrationEvent 
+            where TEventHandler : IIntegrationEventHandler<TEvent>
+        {
+            _subscriptionsManager.RemoveSubscription<TEvent, TEventHandler>();
+        }
+
+        /// <inheritdoc cref="IDisposable" />
+        public void Dispose()
+        {
+            _consumerChannel?.Dispose();
+            _subscriptionsManager.Clear();
+        }
+
+        #region private methods
+
+        private void DoInternalSubscription(string eventName)
+        {
+            var containsKey = _subscriptionsManager.HasSubscriptionsForEvent(eventName);
+            if (containsKey) return;
+
+            if (!_persistentConnection.IsConnected)
+            {
+                _persistentConnection.TryConnect();
+            }
+
+            using (var channel = _persistentConnection.CreateModel())
+            {
+                channel.QueueBind(queue: _queueName, exchange: _brokerName, routingKey: eventName);
+            }
+        }
+        
         private IModel CreateConsumerChannel()
         {
             if (!_persistentConnection.IsConnected)
@@ -115,78 +216,7 @@ namespace Enbiso.Common.EventBus.RabbitMq
             }
         }
 
-        public void Publish(IntegrationEvent @event)
-        {
-            if (!_persistentConnection.IsConnected)
-            {
-                _persistentConnection.TryConnect();
-            }
-
-            var policy = Policy.Handle<BrokerUnreachableException>()
-                .Or<SocketException>()
-                .WaitAndRetry(_retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (ex, time) =>
-                {
-                    _logger.LogWarning(ex.ToString());
-                });
-
-            using (var channel = _persistentConnection.CreateModel())
-            {
-                var eventName = @event.GetType().Name;
-                channel.ExchangeDeclare(exchange: _brokerName, type: "direct");
-
-                var message = JsonConvert.SerializeObject(@event);
-                var body = Encoding.UTF8.GetBytes(message);
-                policy.Execute(() =>
-                {
-                    channel.BasicPublish(exchange: _brokerName, routingKey: eventName, basicProperties: null, body: body);
-                });
-            }
-        }
-
-        public void Subscribe<T, TH>() where T : IntegrationEvent where TH : IIntegrationEventHandler<T>
-        {
-            var eventName = _subscriptionsManager.GetEventKey<T>();
-            DoInternalSubscription(eventName);
-            _subscriptionsManager.AddSubscription<T, TH>();
-        }
-
-        public void SubscribeDynamic<TH>(string eventName) where TH : IDynamicIntegrationEventHandler
-        {
-            DoInternalSubscription(eventName);
-            _subscriptionsManager.AddDynamicSubscription<TH>(eventName);
-        }
-
-        private void DoInternalSubscription(string eventName)
-        {
-            var containsKey = _subscriptionsManager.HasSubscriptionsForEvent(eventName);
-            if (containsKey) return;
-
-            if (!_persistentConnection.IsConnected)
-            {
-                _persistentConnection.TryConnect();
-            }
-
-            using (var channel = _persistentConnection.CreateModel())
-            {
-                channel.QueueBind(queue: _queueName, exchange: _brokerName, routingKey: eventName);
-            }
-        }
-
-        public void UnsubscribeDynamic<TH>(string eventName) where TH : IDynamicIntegrationEventHandler
-        {
-            _subscriptionsManager.RemoveDynamicSubscription<TH>(eventName);
-        }
-
-        public void Unsubscribe<T, TH>() where T : IntegrationEvent where TH : IIntegrationEventHandler<T>
-        {
-            _subscriptionsManager.RemoveSubscription<T, TH>();
-        }
-
-        public void Dispose()
-        {
-            _consumerChannel?.Dispose();
-            _subscriptionsManager.Clear();
-        }
+        #endregion
     }
 }
 

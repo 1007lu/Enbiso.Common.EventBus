@@ -1,13 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Enbiso.Common.EventBus</PackageId>
-    <PackageVersion>1.0.3</PackageVersion>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Team enbiso</Authors>
     <Description>Simple Abstract event bus library</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright 2017 (c) enbiso. All rights reserved.</Copyright>
+    <Copyright>Copyright 2018 (c) enbiso. All rights reserved.</Copyright>
     <PackageTags>Enbiso Enbiso.Common EventBus</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NeutralLanguage>en-AU</NeutralLanguage>
@@ -18,5 +17,13 @@
     <Title>Simple Abstract EventBus</Title>
     <PackageIconUrl>https://image.ibb.co/jkE54b/logo.png</PackageIconUrl>
   </PropertyGroup>
-
+  <ItemGroup>
+    <Compile Remove="Commands\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="Commands\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Commands\**" />
+  </ItemGroup>
 </Project>

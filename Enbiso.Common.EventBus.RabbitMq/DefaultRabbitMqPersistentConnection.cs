@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using Enbiso.Common.EventBus.RabbitMq.Config;
 using RabbitMQ.Client;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client.Events;
@@ -17,15 +18,34 @@ namespace Enbiso.Common.EventBus.RabbitMq
         private readonly int _retryCount;
         private readonly object _syncRoot = new object();
 
-        public DefaultRabbitMqPersistentConnection(IConnectionFactory connectionFactory, ILogger<DefaultRabbitMqPersistentConnection> logger, int retryCount = 5)
+        /// <summary>
+        /// Create default Rabbit connection
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="option"></param>
+        public DefaultRabbitMqPersistentConnection(
+            ILogger<DefaultRabbitMqPersistentConnection> logger, 
+            RabbitMqOption option)
         {
-            _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+            _connectionFactory = new ConnectionFactory
+            {
+                HostName = option.Server ?? throw new ArgumentNullException(nameof(option.Server)),
+            };
+            if(!string.IsNullOrEmpty(option.UserName))
+                _connectionFactory.UserName = option.UserName;
+            if(!string.IsNullOrEmpty(option.Password))
+                _connectionFactory.Password = option.Password;
+            if (!string.IsNullOrEmpty(option.VirtualHost))
+                _connectionFactory.VirtualHost = option.VirtualHost;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _retryCount = retryCount;
+            _retryCount = option.RetryCount;
         }
 
-        public bool IsConnected => _connection != null && _connection.IsOpen && !_disposed;
+        /// <inheritdoc />
+        public bool IsConnected 
+            => _connection != null && _connection.IsOpen && !_disposed;
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
@@ -40,6 +60,7 @@ namespace Enbiso.Common.EventBus.RabbitMq
             }
         }
 
+        /// <inheritdoc />
         public bool TryConnect()
         {
             _logger.LogInformation("RabbitMQ Client is trying to connect");
@@ -74,6 +95,7 @@ namespace Enbiso.Common.EventBus.RabbitMq
             }
         }
 
+        /// <inheritdoc />
         public IModel CreateModel()
         {
             if (!IsConnected)
@@ -83,6 +105,8 @@ namespace Enbiso.Common.EventBus.RabbitMq
 
             return _connection.CreateModel();
         }
+
+        #region private methods
 
         private void OnConnectionBlocked(object sender, ConnectionBlockedEventArgs e)
         {
@@ -104,5 +128,7 @@ namespace Enbiso.Common.EventBus.RabbitMq
             _logger.LogWarning("A RabbitMQ connection is on shutdown. Trying to re-connect...");
             TryConnect();
         }
+
+        #endregion
     }
 }

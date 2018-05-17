@@ -4,24 +4,55 @@ using Enbiso.Common.EventBus.Events;
 
 namespace Enbiso.Common.EventBus.Abstractions
 {
+    /// <summary>
+    /// Event bus interface
+    /// </summary>
     public interface IEventBus
     {
+        /// <summary>
+        /// Initialize eventbus
+        /// </summary>
+        /// <param name="action"></param>
         void Initialize(Action action = null);
 
-        void Publish(IntegrationEvent @event);
+        /// <summary>
+        /// Publish event
+        /// </summary>
+        /// <param name="event"></param>
+        void Publish(IIntegrationEvent @event);
 
-        void Subscribe<T, TH>()
-            where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>;
+        /// <summary>
+        /// Subscribe to events
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <typeparam name="TEventHandler"></typeparam>
+        void Subscribe<TEvent, TEventHandler>()
+            where TEvent : IIntegrationEvent
+            where TEventHandler : IIntegrationEventHandler<TEvent>;
 
-        void SubscribeDynamic<TH>(string eventName)
-            where TH : IDynamicIntegrationEventHandler;
+        /// <summary>
+        /// Subscribe to events dynamically
+        /// </summary>
+        /// <param name="eventName"></param>
+        /// <typeparam name="TEventHandler"></typeparam>
+        void SubscribeDynamic<TEventHandler>(string eventName)
+            where TEventHandler : IDynamicIntegrationEventHandler;
 
-        void UnsubscribeDynamic<TH>(string eventName)
-            where TH : IDynamicIntegrationEventHandler;
+        /// <summary>
+        /// Unsusbcribe to event dynamically
+        /// </summary>
+        /// <param name="eventName"></param>
+        /// <typeparam name="TEventHandler"></typeparam>
+        void UnsubscribeDynamic<TEventHandler>(string eventName)
+            where TEventHandler : IDynamicIntegrationEventHandler;
 
-        void Unsubscribe<T, TH>()
-            where TH : IIntegrationEventHandler<T>
-            where T : IntegrationEvent;
+        /// <summary>
+        /// Unsubscribe to events
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <typeparam name="TEventHandler"></typeparam>
+        void Unsubscribe<TEvent, TEventHandler>()
+            where TEventHandler : IIntegrationEventHandler<TEvent>
+            where TEvent : IIntegrationEvent;
     }
 }

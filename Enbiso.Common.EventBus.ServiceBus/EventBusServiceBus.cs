@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Enbiso.Common.EventBus.Abstractions;
 using Enbiso.Common.EventBus.Events;
+using Enbiso.Common.EventBus.Subscriptions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,6 +12,10 @@ using Newtonsoft.Json.Linq;
 
 namespace Enbiso.Common.EventBus.ServiceBus
 {
+    /// <summary>
+    /// Eventbus Service bus
+    /// </summary>
+    /// /// <inheritdoc />
     public class EventBusServiceBus : IEventBus
     {
         private const string AutofacScopeName = "enbiso_event_bus";
@@ -23,6 +27,14 @@ namespace Enbiso.Common.EventBus.ServiceBus
         private readonly SubscriptionClient _subscriptionClient;
         private readonly ILifetimeScope _autofac;
 
+        /// <summary>
+        /// Constrsuctor
+        /// </summary>
+        /// <param name="serviceBusPersisterConnection"></param>
+        /// <param name="logger"></param>
+        /// <param name="subsManager"></param>
+        /// <param name="subscriptionClientName"></param>
+        /// <param name="autofac"></param>
         public EventBusServiceBus(IServiceBusPersisterConnection serviceBusPersisterConnection,
             ILogger<EventBusServiceBus> logger, IEventBusSubscriptionsManager subsManager,
             string subscriptionClientName,
@@ -40,13 +52,15 @@ namespace Enbiso.Common.EventBus.ServiceBus
             RemoveDefaultRule();
         }
 
+        /// <inheritdoc />
         public void Initialize(Action action = null)
         {
             action?.Invoke();
             RegisterSubscriptionClientMessageHandler();
         }
 
-        public void Publish(IntegrationEvent @event)
+        /// <inheritdoc />
+        public void Publish(IIntegrationEvent @event)
         {
             var eventName = @event.GetType().Name.Replace(IntegrationEventSufix, "");
             var jsonMessage = JsonConvert.SerializeObject(@event);
@@ -65,19 +79,21 @@ namespace Enbiso.Common.EventBus.ServiceBus
                 .GetResult();
         }
 
-        public void SubscribeDynamic<TH>(string eventName)
-            where TH : IDynamicIntegrationEventHandler
+        /// <inheritdoc />
+        public void SubscribeDynamic<TEventHandler>(string eventName)
+            where TEventHandler : IDynamicIntegrationEventHandler
         {
-            _subsManager.AddDynamicSubscription<TH>(eventName);
+            _subsManager.AddDynamicSubscription<TEventHandler>(eventName);
         }
 
-        public void Subscribe<T, TH>()
-            where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>
+        /// <inheritdoc />
+        public void Subscribe<TEvent, TEventHandler>()
+            where TEvent : IIntegrationEvent
+            where TEventHandler : IIntegrationEventHandler<TEvent>
         {
-            var eventName = typeof(T).Name.Replace(IntegrationEventSufix, "");
+            var eventName = typeof(TEvent).Name.Replace(IntegrationEventSufix, "");
 
-            var containsKey = _subsManager.HasSubscriptionsForEvent<T>();
+            var containsKey = _subsManager.HasSubscriptionsForEvent<TEvent>();
             if (!containsKey)
             {
                 try
@@ -94,14 +110,15 @@ namespace Enbiso.Common.EventBus.ServiceBus
                 }
             }
 
-            _subsManager.AddSubscription<T, TH>();
+            _subsManager.AddSubscription<TEvent, TEventHandler>();
         }
 
-        public void Unsubscribe<T, TH>()
-            where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>
+        /// <inheritdoc />
+        public void Unsubscribe<TEvent, TEventHandler>()
+            where TEvent : IIntegrationEvent
+            where TEventHandler : IIntegrationEventHandler<TEvent>
         {
-            var eventName = typeof(T).Name.Replace(IntegrationEventSufix, "");
+            var eventName = typeof(TEvent).Name.Replace(IntegrationEventSufix, "");
 
             try
             {
@@ -115,19 +132,23 @@ namespace Enbiso.Common.EventBus.ServiceBus
                 _logger.LogInformation($"The messaging entity {eventName} Could not be found.");
             }
 
-            _subsManager.RemoveSubscription<T, TH>();
+            _subsManager.RemoveSubscription<TEvent, TEventHandler>();
         }
 
+        /// <inheritdoc />
         public void UnsubscribeDynamic<TH>(string eventName)
             where TH : IDynamicIntegrationEventHandler
         {
             _subsManager.RemoveDynamicSubscription<TH>(eventName);
         }
 
+        /// <inheritdoc cref="IDisposable" />
         public void Dispose()
         {
             _subsManager.Clear();
         }
+
+        #region private methods
 
         private void RegisterSubscriptionClientMessageHandler()
         {
@@ -179,7 +200,7 @@ namespace Enbiso.Common.EventBus.ServiceBus
                             var handler = scope.ResolveOptional(subscription.HandlerType);
                             var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
                             await (Task) concreteType.GetMethod("Handle")
-                                .Invoke(handler, new object[] {integrationEvent});
+                                .Invoke(handler, new[] {integrationEvent});
                         }
                     }
                 }
@@ -200,5 +221,8 @@ namespace Enbiso.Common.EventBus.ServiceBus
                 _logger.LogInformation($"The messaging entity {RuleDescription.DefaultRuleName} Could not be found.");
             }
         }
+
+        #endregion
+        
     }
 }
