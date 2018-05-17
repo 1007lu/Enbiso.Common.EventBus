@@ -3,11 +3,18 @@ using Enbiso.Common.EventBus.Events;
 
 namespace Enbiso.Common.EventBus.Abstractions
 {
-    public interface IIntegrationEventHandler<in TIntegrationEvent> : IIntegrationEventHandler where TIntegrationEvent: IntegrationEvent
+    /// <summary>
+    /// Integration event handler with type event
+    /// </summary>
+    /// <typeparam name="TEvent"></typeparam>
+    public interface IIntegrationEventHandler<in TEvent> : IIntegrationEventHandler where TEvent: IIntegrationEvent
     {
-        Task Handle(TIntegrationEvent @event);
+        Task Handle(TEvent @event);
     }
 
+    /// <summary>
+    /// Integration event handler
+    /// </summary>
     public interface IIntegrationEventHandler
     {
 

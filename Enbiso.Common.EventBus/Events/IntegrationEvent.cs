@@ -2,9 +2,9 @@
 
 namespace Enbiso.Common.EventBus.Events
 {
-    public class IntegrationEvent
+    public abstract class IntegrationEvent: IIntegrationEvent
     {
-        public IntegrationEvent()
+        protected IntegrationEvent()
         {
             Id = Guid.NewGuid();
             CreationDate = DateTime.UtcNow;

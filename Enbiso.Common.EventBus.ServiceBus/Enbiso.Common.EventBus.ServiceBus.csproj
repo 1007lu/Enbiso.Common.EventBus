@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Enbiso.Common.EventBus.ServiceBus</PackageId>
-    <PackageVersion>1.0.2</PackageVersion>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Team enbiso</Authors>
     <Description>Azure ServiceBus Implementation of EventBus</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright 2017 (c) enbiso. All rights reserved.</Copyright>
+    <Copyright>Copyright 2018 (c) enbiso. All rights reserved.</Copyright>
     <PackageTags>Enbiso Enbiso.Common EventBus Azure ServiceBus</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NeutralLanguage>en-AU</NeutralLanguage>
