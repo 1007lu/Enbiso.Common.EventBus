@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Enbiso.Common.EventBus.RabbitMq</PackageId>
-    <PackageVersion>1.1.1</PackageVersion>
+    <PackageVersion>2.1.0</PackageVersion>
     <Authors>Team enbiso</Authors>
     <Description>RabbitMq Implementation of EventBus</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -18,11 +18,12 @@
     <PackageIconUrl>https://image.ibb.co/jkE54b/logo.png</PackageIconUrl>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.6.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="Polly" Version="5.6.1" />
-    <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
+    <PackageReference Include="Autofac" Version="4.8.*" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.*" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.*" />
+    <PackageReference Include="Polly" Version="6.0.*" />
+    <PackageReference Include="RabbitMQ.Client" Version="5.0.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Enbiso.Common.EventBus\Enbiso.Common.EventBus.csproj" />

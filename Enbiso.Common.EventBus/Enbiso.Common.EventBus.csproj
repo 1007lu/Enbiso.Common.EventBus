@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Enbiso.Common.EventBus</PackageId>
-    <PackageVersion>1.1.1</PackageVersion>
+    <PackageVersion>2.1.0</PackageVersion>
     <Authors>Team enbiso</Authors>
     <Description>Simple Abstract event bus library</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -27,7 +27,7 @@
     <None Remove="Commands\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.0.3" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.*" />
   </ItemGroup>
 </Project>
